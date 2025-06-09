@@ -154,7 +154,7 @@ end
 EPSILON = 1E-12
 first_non_zero(v::Vector) = v[findfirst(x -> abs(x) > EPSILON, v)]
 
-function conjugate(model::Model, sample_time::AbstractFloat)
+function conjugate(model::Model, sample_time::AbstractFloat, quiet::Bool=false)
     T = typeof(model)
     T_star = conjugate(T)
 
@@ -176,7 +176,9 @@ function conjugate(model::Model, sample_time::AbstractFloat)
 
     initial_vec = 100 * ones(p)
     v, loss, num_iters = newton_raphson(E, G, H, initial_vec, E_min)
-    println("Converged to $(v) with loss $(loss) in $(num_iters) steps")
+    if !quiet
+        println("Converged to $(v) with loss $(loss) in $(num_iters) steps")
+    end
     s = first_non_zero(v)
     b_star = v / s 
     new_zeros = roots(Polynomial(b_star[end:-1:1]))
@@ -186,7 +188,7 @@ function conjugate(model::Model, sample_time::AbstractFloat)
     T_star(new_poles, new_zeros, new_var)
 end
 
-function conjugate(model::Model, sample_time::AbstractFloat, m::Vector, P::Matrix, model_star::Union{Model, Nothing}=nothing)
+function conjugate(model::Model, sample_time::AbstractFloat, m::Vector, P::Matrix, model_star::Union{Model, Nothing}=nothing, quiet::Bool=false)
     T = typeof(model)
     T_star = conjugate(T)
 
@@ -196,7 +198,7 @@ function conjugate(model::Model, sample_time::AbstractFloat, m::Vector, P::Matri
     b = b_vec(model)
 
     if isnothing(model_star)
-        model_star = conjugate(model, sample_time)
+        model_star = conjugate(model, sample_time, quiet)
     end
 
     a_star = a_vec(model_star)
@@ -217,10 +219,14 @@ function conjugate(model::Model, sample_time::AbstractFloat, m::Vector, P::Matri
 
     temp_P_star, loss, num_iters = newton_raphson(E, G, H, zeros(size(P)), E_min)
 
-    println("Converged to $(temp_P_star) with loss $(loss) in $(num_iters) steps")
+    if !quiet
+        println("Converged to $(temp_P_star) with loss $(loss) in $(num_iters) steps")
+    end
 
     P_star::Matrix{AbstractFloat} = 0.5 * (temp_P_star + temp_P_star')
-    println("New solution $(P_star) with loss $(E(P_star))")
+    if !quiet
+        println("New solution $(P_star) with loss $(E(P_star))")
+    end
 
     m_star, P_star
 end
@@ -232,7 +238,6 @@ function step_model(model::Model, mean::Vector{AbstractFloat}, cov::Matrix{Abstr
     end
 
     b = b_vec(model)
-    println("b vec: $(b)")
 
     output_means::Vector{AbstractFloat} = []
     output_covs::Vector{AbstractFloat} = []
