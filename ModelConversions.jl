@@ -6,10 +6,10 @@ using LinearAlgebra, Polynomials, FastGaussQuadrature
 
 using Base: show
 
-abstract type Model end
 
-
+# Evaluate the integral of f on [a, b]
 function integrate(f::Function, a::Real, b::Real)
+    # Somewhat arbitrarily decided on a 10th order quadrature scheme.
     x, w = gausslegendre(10)
     x = 0.5 * (b - a) .* x .+ 0.5 * (a + b)
     w *= (b - a) / 2
@@ -17,12 +17,15 @@ function integrate(f::Function, a::Real, b::Real)
     sum(wi * f(xi) for (wi, xi) in zip(w, x))
 end
 
+# Model type definitions
 
+abstract type Model end
 struct ARMA <: Model
     poles::Vector{Complex{AbstractFloat}}
     zeros::Vector{Complex{AbstractFloat}}
     var::AbstractFloat
 end
+
 
 struct CARMA <: Model
     poles::Vector{Complex{AbstractFloat}}
@@ -30,7 +33,9 @@ struct CARMA <: Model
     var::AbstractFloat
 end
 
+
 ord(m::Model) = length(m.poles)
+
 
 function model_approx(m1::Model, m2::Model; rtol=1E-1)
     if typeof(m1) != typeof(m2)
@@ -43,7 +48,10 @@ function model_approx(m1::Model, m2::Model; rtol=1E-1)
     return isapprox(a1, a2, rtol=rtol) && isapprox(b1, b2, rtol=rtol) && isapprox(m1.var, m2.var, rtol=rtol)
 end
 
+
 a_vec(m::Model) = -fromroots(m.poles)[ (ord(m) - 1):-1:0 ]
+
+
 function b_vec(m::ARMA)
     p = ord(m)
     q = length(m.zeros)
@@ -59,6 +67,8 @@ function b_vec(m::ARMA)
     end
     b
 end
+
+
 function b_vec(m::CARMA)
     q = length(m.zeros)
 
@@ -68,6 +78,7 @@ function b_vec(m::CARMA)
 
     b
 end
+
 
 function A_mat(m::Model) 
     p = ord(m)
@@ -86,7 +97,6 @@ Base.show(io::IO, model::ARMA) = print(io, "ARMA model:\n * poles = $(model.pole
 Base.show(io::IO, model::CARMA) = print(io, "CARMA model:\n * poles = $(model.poles),\n * a = $(a_vec(model)),\n * zeros = $(model.zeros),\n * b = $(b_vec(model)),\n * var = $(model.var)\n")
 
 
-
 conjugate_pole(T::Type{ARMA}, lambda::Complex, sample_time::AbstractFloat) = log(lambda) / sample_time
 conjugate_pole(T::Type{CARMA}, lambda::Complex, sample_time::AbstractFloat) = exp(lambda * sample_time)
 
@@ -94,8 +104,10 @@ conjugate_pole(T::Type{CARMA}, lambda::Complex, sample_time::AbstractFloat) = ex
 conjugate(T::Type{ARMA}) = CARMA
 conjugate(T::Type{CARMA}) = ARMA
 
+
 Theta(m::ARMA, k::Integer, sample_time::AbstractFloat) = A_mat(m)^k 
 Theta(m::CARMA, k::Integer, sample_time::AbstractFloat) = exp(A_mat(m) * k * sample_time)
+
 
 function K(m::ARMA, k::Integer, sample_time::AbstractFloat)
     p = ord(m)
@@ -104,14 +116,15 @@ function K(m::ARMA, k::Integer, sample_time::AbstractFloat)
     Q = zeros(size(A))
     Q[1,1] = 1.0
 
-    res = zeros(size(A))
+    # Iteratively calculate the K value for the ARMA model
+    K_res = zeros(size(A))
     A_iter = Matrix(I, p, p)
     for _ in 1:k 
-        res += A_iter * Q * A_iter'
+        K_res += A_iter * Q * A_iter'
         A_iter *= A
     end
 
-    res * m.var
+    K_res * m.var
 end
 
 
@@ -121,17 +134,20 @@ function K(m::CARMA, k::Integer, sample_time::AbstractFloat)
     Q = zeros(size(A))
     Q[1,1] = 1.0
 
-    foo(tau) = begin
+    # Calculate the K value by integrating over all intervals [(i - 1) * T_s, i * T_s]
+    # The integration is done over every interval instead of the whole interval directly 
+    # to reduce numerical error
+    K_foo(tau) = begin
         exp_term = exp(A * (k * sample_time - tau))
         exp_term * Q * exp_term'
     end
 
-    res = zeros(size(A))
+    K_res = zeros(size(A))
     for i in 1:k 
-        res += integrate(foo, (i - 1) * sample_time, i * sample_time)
+        K_res += integrate(K_foo, (i - 1) * sample_time, i * sample_time)
     end
 
-    res * m.var
+    K_res * m.var
 end
 
 
@@ -153,6 +169,7 @@ end
 
 EPSILON = 1E-12
 first_non_zero(v::Vector) = v[findfirst(x -> abs(x) > EPSILON, v)]
+
 
 function conjugate(model::Model, sample_time::AbstractFloat, quiet::Bool=false)
     T = typeof(model)
@@ -187,6 +204,7 @@ function conjugate(model::Model, sample_time::AbstractFloat, quiet::Bool=false)
 
     T_star(new_poles, new_zeros, new_var)
 end
+
 
 function conjugate(model::Model, sample_time::AbstractFloat, m::Vector, P::Matrix, model_star::Union{Model, Nothing}=nothing, quiet::Bool=false)
     T = typeof(model)
@@ -283,6 +301,8 @@ function BL_transformation(model::ARMA, sample_time::AbstractFloat)
     new_var = -2 * S * model.var
     CARMA(new_poles, new_zeros, new_var)
 end
+
+
 function BL_transformation(model::CARMA, sample_time::AbstractFloat)
     p = ord(model)
     q = length(model.zeros)
