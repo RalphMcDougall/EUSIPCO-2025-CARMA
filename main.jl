@@ -5,6 +5,7 @@ using Plots, LaTeXStrings, Distributions, LinearAlgebra, ProgressMeter, Random, 
 includet("ModelConversions.jl")
 using .ModelConversion
 
+
 # Plot style definitions
 
 BLACK   = colorant"#000000"
@@ -24,7 +25,6 @@ GAUSSIAN_CONFIDENCE_95 = 1.96
 # Logging helper definitions
 
 SEPERATOR = "-------------------------"
-
 
 log_info(txt::String) = println("\n", Crayon(foreground = :yellow), txt, Crayon(reset=true), "\n")
 
@@ -97,7 +97,6 @@ function run_benchmarks()
     log_info("</> Finished benchmarks.\n$(SEPERATOR)")
 end
 
-
 function stationary_process_tracking()
     log_info("$(SEPERATOR)\n<> Running stationary process prediction example...")
     sample_time = 0.5
@@ -115,7 +114,7 @@ function stationary_process_tracking()
     println("Initial mean:\n", initial_m, "\n")
     println("Initial cov:\n", initial_P, "\n")
 
-    initial_m_star, initial_P_star = conjugate(arma, sample_time, initial_m, initial_P, nothing, true)
+    initial_m_star, initial_P_star = conjugate(arma, sample_time, initial_m, initial_P, true)
     println("Transformed mean:\n", initial_m_star, "\n")
     println("Transformed cov:\n", initial_P_star, "\n") 
 
@@ -149,10 +148,9 @@ function stationary_process_tracking()
     plot!(1:0, 1:0, color=BLUE, label="95% error", linewidth=SECONDARY_LINEWIDTH, linestyle=:dash)
 
     savefig(p, "figs/stationary_process.pdf")
+
     log_info("</> Finished stationary process prediction example.\n$(SEPERATOR)")
-
 end
-
 
 function transform_integrated_OU()
     log_info("$(SEPERATOR)\n<> Calculating conjugate models for integrated OU models...")
@@ -174,14 +172,16 @@ function transform_integrated_OU()
     plot!(twinx(p), alpha_range, discrete_zeros, title="Non-trivial ARMA(2, 1) parameters", label=L"z_d", legend=:bottomright, legendfontsize=LEGEND_FONT_SIZE, ylabel="Zero position", color=BLUE, linewidth=LINE_WIDTH, ylim=[-1.0, 0.0], grid=false)
     
     savefig(p, "figs/ou_transformation.pdf")
+
     log_info("</> Finished integrated OU example.\n$(SEPERATOR)")
 end
 
-
 function transform_singer()
     log_info("$(SEPERATOR)\n<> Calculating conjugate models for Singer models...")
+    
     sample_time = 1.0
     alpha_range = -10:0.001:0
+
     discrete_zeros::Matrix{Complex} = zeros((2, length(alpha_range)))
     discrete_vars::Vector{Real} = []
     println("Ranging alpha values on: ", alpha_range)
@@ -193,14 +193,13 @@ function transform_singer()
     end
     
     p = plot(alpha_range, discrete_vars, yaxis=:log, label=L"\sigma_d^2", xlabel=L"\alpha", legend=:bottomleft, legendfontsize=LEGEND_FONT_SIZE, ylabel="Variance", color=RED, linewidth=LINE_WIDTH, grid=false, ylim=[1E-3, 1E-1])
-    
     plot!(twinx(p), alpha_range, real.(discrete_zeros[1,:]), title="Non-trivial ARMA(3,2) parameters", label=L"z_d", legend=:bottomright, legendfontsize=LEGEND_FONT_SIZE, ylabel="Zero position", color=BLUE, linewidth=LINE_WIDTH, grid=false, ylim=[-2.5, 0])
     plot!(twinx(p), alpha_range, real.(discrete_zeros[2,:]), label="", color=BLUE, linewidth=LINE_WIDTH, ylim=[-2.5, 0.0])
 
     savefig(p, "figs/singer_transformation.pdf")
+
     log_info("</> Finished Singer example.\n$(SEPERATOR)")
 end
-
 
 function main()
     Random.seed!(1234)

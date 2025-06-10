@@ -3,7 +3,6 @@ module ModelConversion
 export ARMA, CARMA, conjugate, show, step_model, BL_transformation, model_approx
 
 using LinearAlgebra, Polynomials, FastGaussQuadrature
-
 using Base: show
 
 
@@ -17,15 +16,16 @@ function integrate(f::Function, a::Real, b::Real)
     sum(wi * f(xi) for (wi, xi) in zip(w, x))
 end
 
+
 # Model type definitions
 
 abstract type Model end
+
 struct ARMA <: Model
     poles::Vector{Complex{AbstractFloat}}
     zeros::Vector{Complex{AbstractFloat}}
     var::AbstractFloat
 end
-
 
 struct CARMA <: Model
     poles::Vector{Complex{AbstractFloat}}
@@ -34,8 +34,9 @@ struct CARMA <: Model
 end
 
 
-ord(m::Model) = length(m.poles)
+# Model helper function definitions
 
+ord(m::Model) = length(m.poles)
 
 function model_approx(m1::Model, m2::Model; rtol=1E-1)
     if typeof(m1) != typeof(m2)
@@ -48,9 +49,7 @@ function model_approx(m1::Model, m2::Model; rtol=1E-1)
     return isapprox(a1, a2, rtol=rtol) && isapprox(b1, b2, rtol=rtol) && isapprox(m1.var, m2.var, rtol=rtol)
 end
 
-
 a_vec(m::Model) = -fromroots(m.poles)[ (ord(m) - 1):-1:0 ]
-
 
 function b_vec(m::ARMA)
     p = ord(m)
@@ -68,7 +67,6 @@ function b_vec(m::ARMA)
     b
 end
 
-
 function b_vec(m::CARMA)
     q = length(m.zeros)
 
@@ -78,7 +76,6 @@ function b_vec(m::CARMA)
 
     b
 end
-
 
 function A_mat(m::Model) 
     p = ord(m)
@@ -92,22 +89,20 @@ function A_mat(m::Model)
     A
 end
 
-
 Base.show(io::IO, model::ARMA) = print(io, "ARMA model:\n * poles = $(model.poles),\n * a = $(a_vec(model)),\n * zeros = $(model.zeros),\n * b = $(b_vec(model)),\n * var = $(model.var)\n")
 Base.show(io::IO, model::CARMA) = print(io, "CARMA model:\n * poles = $(model.poles),\n * a = $(a_vec(model)),\n * zeros = $(model.zeros),\n * b = $(b_vec(model)),\n * var = $(model.var)\n")
 
 
+# Model conjugation functions
+
 conjugate_pole(T::Type{ARMA}, lambda::Complex, sample_time::AbstractFloat) = log(lambda) / sample_time
 conjugate_pole(T::Type{CARMA}, lambda::Complex, sample_time::AbstractFloat) = exp(lambda * sample_time)
-
 
 conjugate(T::Type{ARMA}) = CARMA
 conjugate(T::Type{CARMA}) = ARMA
 
-
 Theta(m::ARMA, k::Integer, sample_time::AbstractFloat) = A_mat(m)^k 
 Theta(m::CARMA, k::Integer, sample_time::AbstractFloat) = exp(A_mat(m) * k * sample_time)
-
 
 function K(m::ARMA, k::Integer, sample_time::AbstractFloat)
     p = ord(m)
@@ -126,7 +121,6 @@ function K(m::ARMA, k::Integer, sample_time::AbstractFloat)
 
     K_res * m.var
 end
-
 
 function K(m::CARMA, k::Integer, sample_time::AbstractFloat)
     A = A_mat(m)
@@ -150,7 +144,6 @@ function K(m::CARMA, k::Integer, sample_time::AbstractFloat)
     K_res * m.var
 end
 
-
 function newton_raphson(E::Function, G::Function, H::Function, initial_state::Array, E_min::Real)
     state = initial_state
 
@@ -169,7 +162,6 @@ end
 
 EPSILON = 1E-12
 first_non_zero(v::Vector) = v[findfirst(x -> abs(x) > EPSILON, v)]
-
 
 function conjugate(model::Model, sample_time::AbstractFloat, quiet::Bool=false)
     T = typeof(model)
@@ -205,8 +197,7 @@ function conjugate(model::Model, sample_time::AbstractFloat, quiet::Bool=false)
     T_star(new_poles, new_zeros, new_var)
 end
 
-
-function conjugate(model::Model, sample_time::AbstractFloat, m::Vector, P::Matrix, model_star::Union{Model, Nothing}=nothing, quiet::Bool=false)
+function conjugate(model::Model, sample_time::AbstractFloat, m::Vector, P::Matrix, quiet::Bool=false)
     T = typeof(model)
     T_star = conjugate(T)
 
@@ -215,9 +206,7 @@ function conjugate(model::Model, sample_time::AbstractFloat, m::Vector, P::Matri
     a = a_vec(model)
     b = b_vec(model)
 
-    if isnothing(model_star)
-        model_star = conjugate(model, sample_time, quiet)
-    end
+    model_star = conjugate(model, sample_time, quiet)
 
     a_star = a_vec(model_star)
     b_star = b_vec(model_star)
@@ -250,6 +239,8 @@ function conjugate(model::Model, sample_time::AbstractFloat, m::Vector, P::Matri
 end
 
 
+# Forward prediction function
+
 function step_model(model::Model, mean::Vector{AbstractFloat}, cov::Matrix{AbstractFloat}, steps::Integer, sample_time::AbstractFloat)
     if steps < 0
         error("Steps must be positive. Provided: $(steps)")
@@ -271,6 +262,8 @@ function step_model(model::Model, mean::Vector{AbstractFloat}, cov::Matrix{Abstr
     output_means, output_covs
 end
 
+
+# Implementations of the Brockwell & Linder, 2019 algorithm
 
 function BL_transformation(model::ARMA, sample_time::AbstractFloat)
     p = ord(model)
@@ -301,7 +294,6 @@ function BL_transformation(model::ARMA, sample_time::AbstractFloat)
     new_var = -2 * S * model.var
     CARMA(new_poles, new_zeros, new_var)
 end
-
 
 function BL_transformation(model::CARMA, sample_time::AbstractFloat)
     p = ord(model)
