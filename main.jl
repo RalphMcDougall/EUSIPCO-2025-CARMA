@@ -1,8 +1,6 @@
-using Revise
+using Plots, LaTeXStrings, Distributions, LinearAlgebra, Random, Crayons
 
-using Plots, LaTeXStrings, Distributions, LinearAlgebra, ProgressMeter, Random, Crayons
-
-includet("ModelConversions.jl")
+include("ModelConversions.jl")
 using .ModelConversion
 
 
