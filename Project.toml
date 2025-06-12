@@ -1,0 +1,6 @@
+name = "EUSIPCO-2025-CARMA"
+authors = ["Ralph McDougall <rjm279@cam.ac.uk>"]
+version = "1.0.0"
+
+[deps]
+Crayons = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
