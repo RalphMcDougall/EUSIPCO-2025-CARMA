@@ -1,4 +1,8 @@
-name = "EUSIPCO-2025-CARMA"
+[project]
+name = "ModelConversions"
+uuid = "4c3199f8-00cb-4b87-8cb4-8885c4889e79"
+version = "1.0.0"
+authors = ["Ralph McDougall <ralphmcdougall2000@gmail.com>"]
 
 [deps]
 Crayons = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
@@ -9,3 +13,6 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[compat]
+julia = "1.11.6"
