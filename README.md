@@ -7,6 +7,7 @@ This will be presented at the [European Signal Processing Conference (EUSIPCO)](
 
 If you would like to use or copy any of the code provided here, please cite the original paper.
 
-## Code structure
+## Project structure
 
-The code provided here is intended to be run as a script, with the entry-point being `main()` in `main.jl`.
+The results from our paper can be reproduced by running `scripts/run_experiments.jl`.
+All model conversion code is available in the `ModelConversions` package within `src/`.
