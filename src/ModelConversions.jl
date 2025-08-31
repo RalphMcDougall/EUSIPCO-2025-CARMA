@@ -1,4 +1,4 @@
-module ModelConversion
+module ModelConversions
 
 export ARMA, CARMA, conjugate, show, step_model, BL_transformation, model_approx
 

@@ -1,7 +1,7 @@
 using Plots, LaTeXStrings, Distributions, LinearAlgebra, Random, Crayons
 
-includet("ModelConversions.jl")
-using .ModelConversion
+include("../src/ModelConversions.jl")
+using .ModelConversions
 
 # Plot style definitions
 
