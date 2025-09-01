@@ -7,7 +7,15 @@ This will be presented at the [European Signal Processing Conference (EUSIPCO)](
 
 If you would like to use or copy any of the code provided here, please cite the original paper.
 
+## Reproducing results
+The code and environment configuration required to reproduce our results can be found in the branch `reproduce-paper`.
+The necessary script can be run in the following ways:
+1.  Navigate to your local folder containing this repository and start a Julia REPL session using `> julia` in the terminal.
+2.  Activate the project environment through: `using Pkg; Pkg.activate("."); Pkg.instantiate();`.
+3.  Run the experiments: `include("scripts/run_experiments.jl")`
+
+All generated figures will be in the `figs` folder.
+
 ## Project structure
 
-The results from our paper can be reproduced by running `scripts/run_experiments.jl`.
 All model conversion code is available in the `ModelConversions` package within `src/`.
