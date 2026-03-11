@@ -1,6 +1,6 @@
 module ModelConversions
 
-export ARMA, CARMA, conjugate, show, step_model, BL_transformation, model_approx
+export ARMA, CARMA, conjugate, show, step_model, BL_transformation, model_approx, a_vec, b_vec
 
 using LinearAlgebra, Polynomials, FastGaussQuadrature
 using Base: show
