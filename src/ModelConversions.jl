@@ -24,7 +24,7 @@ struct ARMA{T} <: AbstractModel{T}
     zeros::Vector{Complex{T}}
     var::T
 
-    function ARMA(poles::Vector{Complex{T}}, zeros::Vector{Complex{T}}, var::T) where {T}
+    function ARMA{T}(poles::Vector{Complex{T}}, zeros::Vector{Complex{T}}, var::T) where {T}
         return if length(zeros) >= length(poles)
             error("Process must have more poles than zeros to be causal.")
         else
@@ -38,7 +38,7 @@ struct CARMA{T} <: AbstractModel{T}
     zeros::Vector{Complex{T}}
     var::T
 
-    function CARMA(poles::Vector{Complex{T}}, zeros::Vector{Complex{T}}, var::T) where {T}
+    function CARMA{T}(poles::Vector{Complex{T}}, zeros::Vector{Complex{T}}, var::T) where {T}
         return if length(zeros) >= length(poles)
             error("Process must have more poles than zeros to be causal.")
         else
@@ -108,7 +108,7 @@ function model_approx(m1::MT, m2::MT; rtol=1E-1) where {T,MT<:AbstractModel{T}}
            isapprox(m1.var, m2.var; rtol=rtol)
 end
 
-a_vec(m::MT) where {T,MT<:AbstractModel{T}} = -fromroots(m.poles)[(ord(m) - 1):-1:0]
+a_vec(m::MT) where {T,MT<:AbstractModel{T}} = -fromroots(m.poles)[(ord(m)-1):-1:0]
 
 function b_vec(m::ARMA{T}) where {T}
     p = ord(m)
@@ -131,7 +131,7 @@ function b_vec(m::CARMA)
 
     b = zeros((1, ord(m)))
     b_poly = q > 0 ? fromroots(m.zeros) : Polynomial(1)
-    b[(end - q):end] = b_poly[q:-1:0]
+    b[(end-q):end] = b_poly[q:-1:0]
 
     return b
 end
@@ -142,7 +142,7 @@ function A_mat(m::MT) where {T,MT<:AbstractModel{T}}
 
     A[1, :] = a_vec(m)
     for i in 2:p
-        A[i, i - 1] = 1
+        A[i, i-1] = 1
     end
 
     return A
@@ -293,19 +293,19 @@ function conjugate(
     temp_mat::Matrix{T} = mapreduce(
         permutedims,
         vcat,
-        [vec(b_star * Theta(model_star, i, sample_time)) for i in 0:(p - 1)],
+        [vec(b_star * Theta(model_star, i, sample_time)) for i in 0:(p-1)],
     )
     temp_vec::Vector{T} = vec(
         mapreduce(
-            permutedims, vcat, [b * Theta(model, i, sample_time) * m for i in 0:(p - 1)]
+            permutedims, vcat, [b * Theta(model, i, sample_time) * m for i in 0:(p-1)]
         ),
     )
     m_star::Vector{T} = inv(temp_mat) * temp_vec
 
-    v = [transpose(b_star * Theta(model_star, i, sample_time)) for i in 0:(p^2 - 1)]
+    v = [transpose(b_star * Theta(model_star, i, sample_time)) for i in 0:(p^2-1)]
     r = [
         only(b * Theta(model, i, sample_time) * P * Theta(model, i, sample_time)' * b') for
-        i in 0:(length(v) - 1)
+        i in 0:(length(v)-1)
     ]
 
     E_min = 1E-12
